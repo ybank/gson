@@ -229,11 +229,22 @@ public class ObjectTest extends TestCase {
     assertNull(target.bag);
   }
 
-  public void testEmptyCollectionInAnObjectDeserialization() throws Exception {
+  public void testEmptyCollectionInAnObjectDeserialization_old() throws Exception {
     String json = "{\"children\":[]}";
     ContainsReferenceToSelfType target = gson.fromJson(json, ContainsReferenceToSelfType.class);
     assertNotNull(target);
     assertTrue(target.children.isEmpty());
+  }
+
+  public void testEmptyCollectionInAnObjectDeserialization() throws Exception {
+    String json = "{\"children\":[]}";
+    ClassWithCollectionField target = gson.fromJson(json, ClassWithCollectionField.class);
+    assertNotNull(target);
+    assertTrue(target.children.isEmpty());
+  }
+
+  private static class ClassWithCollectionField {
+    Collection<String> children = new ArrayList<String>();
   }
 
   public void testPrimitiveArrayInAnObjectDeserialization() throws Exception {
@@ -251,8 +262,13 @@ public class ObjectTest extends TestCase {
     assertEquals(BagOfPrimitives.DEFAULT_VALUE, target.longValue);
   }
 
-  public void testEmptyCollectionInAnObjectSerialization() throws Exception {
+  public void testEmptyCollectionInAnObjectSerialization_old() throws Exception {
     ContainsReferenceToSelfType target = new ContainsReferenceToSelfType();
+    assertEquals("{\"children\":[]}", gson.toJson(target));
+  }
+
+  public void testEmptyCollectionInAnObjectSerialization() throws Exception {
+    ClassWithCollectionField target = new ClassWithCollectionField();
     assertEquals("{\"children\":[]}", gson.toJson(target));
   }
 
