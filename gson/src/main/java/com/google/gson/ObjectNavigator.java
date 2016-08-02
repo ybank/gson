@@ -63,8 +63,6 @@ final class ObjectNavigator {
      */
     public boolean visitFieldUsingCustomHandler(Field f, Type actualTypeOfField, Object parent);
 
-    public ObjectTypePair getActualTypeIfMoreSpecific(ObjectTypePair objTypePair);
-
     /**
      * Retrieve the current target
      */
@@ -116,8 +114,10 @@ final class ObjectNavigator {
           objectToVisit = visitor.getTarget();
         } else {
           visitor.startVisitingObject(objectToVisit);
-          ObjectTypePair currObjTypePair = visitor.getActualTypeIfMoreSpecific(objTypePair);
-          Class<?> topLevelClass = new TypeInfo(currObjTypePair.getType()).getRawClass();
+          // For all classes in the inheritance hierarchy (including the current class),
+          // visit all fields
+          Class<?> topLevelClass = (objTypeInfo.getRawClass() == Object.class)
+              ? objectToVisit.getClass() : objTypeInfo.getRawClass();
           for (Class<?> curr = topLevelClass; curr != null && !curr.equals(Object.class);
               curr = curr.getSuperclass()) {
             if (!curr.isSynthetic()) {
@@ -145,14 +145,14 @@ final class ObjectNavigator {
         continue; // skip
       } else {
         TypeInfo fieldTypeInfo = TypeInfoFactory.getTypeInfoForField(f, objTypePair.getType());
-        Type declaredTypeOfField = fieldTypeInfo.getActualType();
+        Type actualTypeOfField = fieldTypeInfo.getActualType();
         boolean visitedWithCustomHandler =
-            visitor.visitFieldUsingCustomHandler(f, declaredTypeOfField, obj);
+            visitor.visitFieldUsingCustomHandler(f, actualTypeOfField, obj);
         if (!visitedWithCustomHandler) {
           if (fieldTypeInfo.isArray()) {
-            visitor.visitArrayField(f, declaredTypeOfField, obj);
+            visitor.visitArrayField(f, actualTypeOfField, obj);
           } else {
-            visitor.visitObjectField(f, declaredTypeOfField, obj);
+            visitor.visitObjectField(f, actualTypeOfField, obj);
           }
         }
       }

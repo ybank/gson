@@ -22,7 +22,7 @@ import java.lang.reflect.Type;
 
 /**
  * A visitor that adds JSON elements corresponding to each field of an object
- * 
+ *
  * @author Inderjeet Singh
  * @author Joel Leitch
  */
@@ -36,15 +36,15 @@ final class JsonSerializationVisitor implements ObjectNavigator.Visitor {
   private JsonElement root;
 
   JsonSerializationVisitor(ObjectNavigatorFactory factory, boolean serializeNulls,
-      ParameterizedTypeHandlerMap<JsonSerializer<?>> serializers, JsonSerializationContext context,
-      MemoryRefStack ancestors) {
+      ParameterizedTypeHandlerMap<JsonSerializer<?>> serializers,
+      JsonSerializationContext context, MemoryRefStack ancestors) {
     this.factory = factory;
     this.serializeNulls = serializeNulls;
     this.serializers = serializers;
     this.context = context;
     this.ancestors = ancestors;
   }
-
+  
   public Object getTarget() {
     return null;
   }
@@ -77,10 +77,10 @@ final class JsonSerializationVisitor implements ObjectNavigator.Visitor {
     for (int i = 0; i < length; ++i) {
       Object child = Array.get(array, i);
       Type childType = componentType;
-      // we should not get more specific component type yet since it is possible
-      // that a custom
-      // serializer is registered for the componentType
-      addAsArrayElement(new ObjectTypePair(child, childType, false));
+      if (child != null) {
+        childType = getActualTypeIfMoreSpecific(childType, child.getClass());
+      }
+      addAsArrayElement(new ObjectTypePair(child, childType));
     }
   }
 
@@ -92,7 +92,7 @@ final class JsonSerializationVisitor implements ObjectNavigator.Visitor {
         }
       } else {
         Object array = getFieldValue(f, obj);
-        addAsChildOfObject(f, new ObjectTypePair(array, typeOfF, false));
+        addAsChildOfObject(f, new ObjectTypePair(array, typeOfF));
       }
     } catch (CircularReferenceException e) {
       throw e.createDetailedException(f);
@@ -107,14 +107,31 @@ final class JsonSerializationVisitor implements ObjectNavigator.Visitor {
         }
       } else {
         Object fieldValue = getFieldValue(f, obj);
-        // we should not get more specific component type yet since it is
-        // possible that a custom
-        // serializer is registered for the componentType
-        addAsChildOfObject(f, new ObjectTypePair(fieldValue, typeOfF, false));
+        if (fieldValue != null) {
+          typeOfF = getActualTypeIfMoreSpecific(typeOfF, fieldValue.getClass());
+        }
+        addAsChildOfObject(f, new ObjectTypePair(fieldValue, typeOfF));
       }
     } catch (CircularReferenceException e) {
       throw e.createDetailedException(f);
     }
+  }
+
+  // This takes care of situations where the field was declared as an Object, but the
+  // actual value contains something more specific. See Issue 54.
+  // TODO (inder): This solution will not work if the field is of a generic type, but 
+  // the actual object is of a raw type (which is a sub-class of the generic type).
+  private Type getActualTypeIfMoreSpecific(Type type, Class<?> actualClass) {
+    if (type instanceof Class<?>) {
+      Class<?> typeAsClass = (Class<?>) type;
+      if (typeAsClass.isAssignableFrom(actualClass)) {
+        type = actualClass;
+      }
+      if (type == Object.class) {
+        type = actualClass;
+      } 
+    }
+    return type;
   }
 
   public void visitPrimitive(Object obj) {
@@ -153,35 +170,28 @@ final class JsonSerializationVisitor implements ObjectNavigator.Visitor {
   public boolean visitUsingCustomHandler(ObjectTypePair objTypePair) {
     try {
       Object obj = objTypePair.getObject();
-      if (obj == null) {
-        if (serializeNulls) {
+      Type objType = objTypePair.getType();
+      JsonSerializer serializer = serializers.getHandlerFor(objType);
+      if (serializer == null && obj != null) {
+        serializer = serializers.getHandlerFor(obj.getClass());
+      }
+
+      if (serializer != null) {
+        if (obj == null) {
           assignToRoot(JsonNull.createJsonNull());
+        } else {
+          assignToRoot(invokeCustomHandler(objTypePair, serializer));
         }
         return true;
       }
-      JsonElement element = findAndInvokeCustomSerializer(objTypePair);
-      if (element != null) {
-        assignToRoot(element);
-        return true;
-      } else {
-        return false;
-      }
+      return false;
     } catch (CircularReferenceException e) {
       throw e.createDetailedException(null);
     }
   }
 
-  /**
-   * objTypePair.getObject() must not be null
-   */
   @SuppressWarnings("unchecked")
-  private JsonElement findAndInvokeCustomSerializer(ObjectTypePair objTypePair) {
-    Pair<JsonSerializer, ObjectTypePair> pair = objTypePair.getMatchingSerializer(serializers);
-    if (pair == null) {
-      return null;
-    }
-    JsonSerializer serializer = pair.getFirst();
-    objTypePair = pair.getSecond();
+  private JsonElement invokeCustomHandler(ObjectTypePair objTypePair, JsonSerializer serializer) {
     start(objTypePair);
     try {
       return serializer.serialize(objTypePair.getObject(), objTypePair.getType(), context);
@@ -191,7 +201,7 @@ final class JsonSerializationVisitor implements ObjectNavigator.Visitor {
   }
 
   @SuppressWarnings("unchecked")
-  public boolean visitFieldUsingCustomHandler(Field f, Type declaredTypeOfField, Object parent) {
+  public boolean visitFieldUsingCustomHandler(Field f, Type actualTypeOfField, Object parent) {
     try {
       Preconditions.checkState(root.isJsonObject());
       Object obj = f.get(parent);
@@ -201,14 +211,14 @@ final class JsonSerializationVisitor implements ObjectNavigator.Visitor {
         }
         return true;
       }
-      ObjectTypePair objTypePair = new ObjectTypePair(obj, declaredTypeOfField, false);
-      JsonElement child = findAndInvokeCustomSerializer(objTypePair);
-      if (child != null) {
+      JsonSerializer serializer = serializers.getHandlerFor(actualTypeOfField);
+      if (serializer != null) {
+        ObjectTypePair objTypePair = new ObjectTypePair(obj, actualTypeOfField);
+        JsonElement child = invokeCustomHandler(objTypePair, serializer);
         addChildAsElement(f, child);
         return true;
-      } else {
-        return false;
       }
+      return false;
     } catch (IllegalAccessException e) {
       throw new RuntimeException();
     } catch (CircularReferenceException e) {
@@ -235,9 +245,5 @@ final class JsonSerializationVisitor implements ObjectNavigator.Visitor {
 
   public JsonElement getJsonElement() {
     return root;
-  }
-
-  public ObjectTypePair getActualTypeIfMoreSpecific(ObjectTypePair objTypePair) {
-    return objTypePair.toMoreSpecificType();
   }
 }
