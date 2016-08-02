@@ -84,25 +84,6 @@ public class InheritanceTest extends TestCase {
     }
   }
 
-  public void testBaseSerializedAsSub() {
-    Base base = new Sub();
-    JsonObject json = gson.toJsonTree(base).getAsJsonObject();
-    assertEquals(Sub.SUB_NAME, json.get(Sub.SUB_FIELD_KEY).getAsString());
-  }
-
-  public void testBaseSerializedAsBaseWhenSpecifiedWithExplicitType() {
-    Base base = new Sub();
-    JsonObject json = gson.toJsonTree(base, Base.class).getAsJsonObject();
-    assertEquals(Base.BASE_NAME, json.get(Base.BASE_FIELD_KEY).getAsString());
-    assertNull(json.get(Sub.SUB_FIELD_KEY));
-  }
-
-  public void testBaseSerializedAsSubWhenSpecifiedWithExplicitType() {
-    Base base = new Sub();
-    JsonObject json = gson.toJsonTree(base, Sub.class).getAsJsonObject();
-    assertEquals(Sub.SUB_NAME, json.get(Sub.SUB_FIELD_KEY).getAsString());
-  }
-
   private static class SubTypeOfNested extends Nested {
     private final long value = 5;
 
