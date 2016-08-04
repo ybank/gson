@@ -113,7 +113,7 @@ public class ParameterizedTypesTest extends TestCase {
     assertEquals(MyParameterizedTypeAdapter.<String>getExpectedJson(stringTarget), json);
   }
 
-  public void testParameterizedTypesWithCustomDeserializer() {
+  public void testParameterizedTypesWithCustomDeserializer_old() {
     Type ptIntegerType = new TypeToken<MyParameterizedType<Integer>>() {}.getType();
     Type ptStringType = new TypeToken<MyParameterizedType<String>>() {}.getType();
     Gson gson = new GsonBuilder().registerTypeAdapter(
@@ -128,6 +128,28 @@ public class ParameterizedTypesTest extends TestCase {
     String json = MyParameterizedTypeAdapter.<Integer>getExpectedJson(src);
     MyParameterizedType<Integer> intTarget = gson.fromJson(json, ptIntegerType);
     assertEquals(10, (int) intTarget.value);
+
+    MyParameterizedType<String> srcStr = new MyParameterizedType<String>("abc");
+    json = MyParameterizedTypeAdapter.<String>getExpectedJson(srcStr);
+    MyParameterizedType<String> stringTarget = gson.fromJson(json, ptStringType);
+    assertEquals("abc", stringTarget.value);
+  }
+
+  public void testParameterizedTypesWithCustomDeserializer() {
+    Type ptIntegerType = new TypeToken<MyParameterizedType<Integer>>() {}.getType();
+    Type ptStringType = new TypeToken<MyParameterizedType<String>>() {}.getType();
+    Gson gson = new GsonBuilder().registerTypeAdapter(
+        ptIntegerType, new MyParameterizedTypeAdapter<Integer>())
+        .registerTypeAdapter(ptStringType, new MyParameterizedTypeAdapter<String>())
+        .registerTypeAdapter(ptStringType, new MyParameterizedTypeInstanceCreator<String>(""))
+        .registerTypeAdapter(ptIntegerType,
+            new MyParameterizedTypeInstanceCreator<Integer>(new Integer(0)))
+        .create();
+
+    MyParameterizedType<Integer> src = new MyParameterizedType<Integer>(10);
+    String json = MyParameterizedTypeAdapter.<Integer>getExpectedJson(src);
+    MyParameterizedType<Integer> intTarget = gson.fromJson(json, ptIntegerType);
+    assertEquals(10, ((Number)intTarget.value).intValue());
 
     MyParameterizedType<String> srcStr = new MyParameterizedType<String>("abc");
     json = MyParameterizedTypeAdapter.<String>getExpectedJson(srcStr);
