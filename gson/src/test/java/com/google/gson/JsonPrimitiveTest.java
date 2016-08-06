@@ -31,10 +31,12 @@ import java.math.BigInteger;
 public class JsonPrimitiveTest extends TestCase {
 
   protected BigInteger cornerInt;
+  protected BigDecimal maxDouble;
 
   protected void setUp() {
     this.cornerInt =  // 2^64 = (Long.MAX_VALUE + 1) * 2
         BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.valueOf(1)).multiply(BigInteger.valueOf(2));
+    this.maxDouble = BigDecimal.valueOf(Double.MAX_VALUE);
   }
 
   public void testBoolean() throws Exception {
@@ -276,6 +278,35 @@ public class JsonPrimitiveTest extends TestCase {
     // 2^64 + 5 == 2^64 + 5
     a = new JsonPrimitive(cornerPlus5); // 2^64 + 5
     b = new JsonPrimitive(cornerPlus5); // 2^64 + 5
+    assertTrue(a + " equals " + b, a.equals(b));
+  }
+
+  public void testEqualsDoubleAndBigDecimal() {
+    BigDecimal smallDelta = BigDecimal.valueOf(111.0D);
+    BigDecimal maxPlus111 = maxDouble.add(smallDelta);
+	BigDecimal maxPlus222 = maxDouble.add(smallDelta).add(smallDelta);
+
+    JsonPrimitive a;
+    JsonPrimitive b;
+
+    // smallDelta != maxPlus111
+    a = new JsonPrimitive(smallDelta);
+    b = new JsonPrimitive(maxPlus111);
+    assertFalse(a + " equals " + b, a.equals(b));
+
+    // maxPlus111 != smallDelta
+    a = new JsonPrimitive(maxPlus111);
+    b = new JsonPrimitive(smallDelta);
+    assertFalse(a + " equals " + b, a.equals(b));
+
+    // maxPlus111 != maxPlus222
+    a = new JsonPrimitive(maxPlus111);
+    b = new JsonPrimitive(maxPlus222);
+    assertFalse(a + " equals " + b, a.equals(b));
+
+    // maxPlus111 != maxPlus111
+    a = new JsonPrimitive(maxPlus111);
+    b = new JsonPrimitive(maxPlus111);
     assertTrue(a + " equals " + b, a.equals(b));
   }
 
