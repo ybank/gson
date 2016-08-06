@@ -226,6 +226,22 @@ public class JsonPrimitiveTest extends TestCase {
     MoreAsserts.assertEqualsAndHashCode(new JsonPrimitive(Float.NaN), new JsonPrimitive(Double.NaN));
   }
 
+  public void testHashCodeBigIntegerEqualsBigInteger() {
+    // within long range
+    JsonPrimitive p1 = new JsonPrimitive(new BigInteger("10"));
+    JsonPrimitive p2 = new JsonPrimitive(new BigInteger("10"));
+    assertTrue(p1 != p2);
+    assertEquals(p1, p2);
+    assertEquals(p1.hashCode(), p2.hashCode());
+
+    // out of long range
+    JsonPrimitive p3 = new JsonPrimitive(new BigInteger("18446744073709551621")); // 2^64 + 5
+    JsonPrimitive p4 = new JsonPrimitive(new BigInteger("18446744073709551621")); // 2^64 + 5
+    assertTrue(p3 != p4);
+    assertEquals(p3, p4);
+    assertEquals(p3.hashCode(), p4.hashCode());
+  }
+
   public void testEqualsIntegerAndBigInteger() {
     JsonPrimitive a = new JsonPrimitive(5L);
     JsonPrimitive b = new JsonPrimitive(new BigInteger("18446744073709551621")); // 2^64 + 5
