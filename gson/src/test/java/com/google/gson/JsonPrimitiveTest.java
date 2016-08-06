@@ -30,6 +30,13 @@ import java.math.BigInteger;
  */
 public class JsonPrimitiveTest extends TestCase {
 
+  protected BigInteger cornerInt;
+
+  protected void setUp() {
+    this.cornerInt =  // 2^64 = (Long.MAX_VALUE + 1) * 2
+        BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.valueOf(1)).multiply(BigInteger.valueOf(2));
+  }
+
   public void testBoolean() throws Exception {
     JsonPrimitive json = new JsonPrimitive(Boolean.TRUE);
 
@@ -228,35 +235,47 @@ public class JsonPrimitiveTest extends TestCase {
 
   public void testHashCodeBigIntegerEqualsBigInteger() {
     // within long range
-    JsonPrimitive p1 = new JsonPrimitive(new BigInteger("10"));
-    JsonPrimitive p2 = new JsonPrimitive(new BigInteger("10"));
-    assertTrue(p1 != p2);
-    assertEquals(p1, p2);
-    assertEquals(p1.hashCode(), p2.hashCode());
+    BigInteger smallBigInt = new BigInteger("10");
+    JsonPrimitive p1 = new JsonPrimitive(smallBigInt);
+    JsonPrimitive p2 = new JsonPrimitive(smallBigInt);
+    assertTrue("should be different objects: " + p1 + ", " + p2, p1 != p2);
+    assertTrue("p1 and p2 should have the same value", p1.equals(p2));
+    assertTrue("p1 and p2 should have the same hash code", p1.hashCode() == p2.hashCode());
 
     // out of long range
-    JsonPrimitive p3 = new JsonPrimitive(new BigInteger("18446744073709551621")); // 2^64 + 5
-    JsonPrimitive p4 = new JsonPrimitive(new BigInteger("18446744073709551621")); // 2^64 + 5
-    assertTrue(p3 != p4);
-    assertEquals(p3, p4);
-    assertEquals(p3.hashCode(), p4.hashCode());
+    BigInteger cornerPlus5 = cornerInt.add(BigInteger.valueOf(5));  // cornerInt + 5
+    JsonPrimitive p3 = new JsonPrimitive(cornerPlus5);
+    JsonPrimitive p4 = new JsonPrimitive(cornerPlus5);
+    assertTrue("should be different objects: " + p3 + ", " + p4, p3 != p4);
+    assertTrue("p3 and p4 should have the same value", p3.equals(p4));
+    assertTrue("p3 and p4 should have the same hash code", p3.hashCode() == p4.hashCode());
   }
 
   public void testEqualsIntegerAndBigInteger() {
-    JsonPrimitive a = new JsonPrimitive(5L);
-    JsonPrimitive b = new JsonPrimitive(new BigInteger("18446744073709551621")); // 2^64 + 5
+    BigInteger cornerPlus4 = cornerInt.add(BigInteger.valueOf(4));  // cornerInt + 4
+    BigInteger cornerPlus5 = cornerInt.add(BigInteger.valueOf(5));  // cornerInt + 5
+
+    JsonPrimitive a;
+    JsonPrimitive b;
+
+    // 5 != 2^64 + 5
+    a = new JsonPrimitive(5);
+    b = new JsonPrimitive(cornerPlus5);
     assertFalse(a + " equals " + b, a.equals(b));
 
-    a = new JsonPrimitive(new BigInteger("18446744073709551621")); // 2^64 + 5
-    b = new JsonPrimitive(5L);
+    // 2^64 + 5 != 5
+    a = new JsonPrimitive(cornerPlus5);  // 2^64 + 5
+    b = new JsonPrimitive(5);
     assertFalse(a + " equals " + b, a.equals(b));
 
-    a = new JsonPrimitive(new BigInteger("18446744073709551621")); // 2^64 + 5
-    b = new JsonPrimitive(new BigInteger("18446744073709551620")); // 2^64 + 4
+    // 2^64 + 5 != 2^64 + 4
+    a = new JsonPrimitive(cornerPlus5); // 2^64 + 5
+    b = new JsonPrimitive(cornerPlus4); // 2^64 + 4
     assertFalse(a + " equals " + b, a.equals(b));
 
-    a = new JsonPrimitive(new BigInteger("18446744073709551621")); // 2^64 + 5
-    b = new JsonPrimitive(new BigInteger("18446744073709551621")); // 2^64 + 5
+    // 2^64 + 5 == 2^64 + 5
+    a = new JsonPrimitive(cornerPlus5); // 2^64 + 5
+    b = new JsonPrimitive(cornerPlus5); // 2^64 + 5
     assertTrue(a + " equals " + b, a.equals(b));
   }
 
