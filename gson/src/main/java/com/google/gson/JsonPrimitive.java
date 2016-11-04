@@ -253,7 +253,11 @@ public final class JsonPrimitive extends JsonElement {
   */
   @Override
   public int getAsInt() {
-    return ((Number) value).intValue();
+      if (value instanceof Integer) {
+        return (Integer) value;
+      } else {
+        return new Integer(value.toString());
+      }
   }
   
   @Override
