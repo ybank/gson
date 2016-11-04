@@ -151,11 +151,47 @@ public class JsonPrimitiveTest extends TestCase {
     assertEquals(p1.hashCode(), p2.hashCode());
   }
 
+  public void testHashCodeBigIntegerEqualsBigInteger() {
+    // within long range
+    BigInteger smallBigInt = new BigInteger("10");
+    JsonPrimitive p1 = new JsonPrimitive(smallBigInt);
+    JsonPrimitive p2 = new JsonPrimitive(smallBigInt);
+    assertTrue("should be different objects: " + p1 + ", " + p2, p1 != p2);
+    assertTrue("p1 and p2 should have the same value", p1.equals(p2));
+    assertTrue("p1 and p2 should have the same hash code", p1.hashCode() == p2.hashCode());
+
+    // out of long range
+    BigInteger limitPlus5 =  // 2^64 + 5
+      new BigInteger("18446744073709551616").add(BigInteger.valueOf(5));
+    JsonPrimitive p3 = new JsonPrimitive(limitPlus5);
+    JsonPrimitive p4 = new JsonPrimitive(limitPlus5);
+    assertTrue("should be different objects: " + p3 + ", " + p4, p3 != p4);
+    assertTrue("p3 and p4 should have the same value", p3.equals(p4));
+    assertTrue("p3 and p4 should have the same hash code", p3.hashCode() == p4.hashCode());
+  }
+
   public void testFloatEqualsDouble() {
     JsonPrimitive p1 = new JsonPrimitive(new Float(10.25F));
     JsonPrimitive p2 = new JsonPrimitive(new Double(10.25D));
     assertEquals(p1, p2);
     assertEquals(p1.hashCode(), p2.hashCode());
+  }
+  
+  public void testEqualsForBigIntegers() {
+    BigInteger limit =         // 2^64
+        new BigInteger("18446744073709551616");
+    JsonPrimitive one = new JsonPrimitive(1L);
+    JsonPrimitive lp1 =        // limit + 1
+        new JsonPrimitive(limit.add(new BigInteger("1")));
+    JsonPrimitive lp1c =       // limit + 1, a different object
+        new JsonPrimitive(limit.add(new BigInteger("1")));
+    JsonPrimitive lp2 =        // limit + 2
+        new JsonPrimitive(limit.add(new BigInteger("2")));
+    // compare 1, limit + 1, limit + 2, etc.
+    assertFalse("limit + 1 = 1", lp1.equals(one));
+    assertFalse("1 = limit + 1", one.equals(lp1));
+    assertFalse("limit + 1 = limit + 2", lp1.equals(lp2));
+    assertTrue("limit + 1 = limit + 1", lp1.equals(lp1c));
   }
 
   public void testFloatEqualsBigDecimal() {
