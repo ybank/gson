@@ -375,7 +375,7 @@ public final class JsonPrimitive extends JsonElement {
       return getAsNumber().longValue() == other.getAsNumber().longValue();
     }
     if (isFloatingPoint(this) && isFloatingPoint(other)) {
-      return getAsNumber().doubleValue() == other.getAsNumber().doubleValue();
+      return getAsBigDecimal().equals(other.getAsBigDecimal());
     }
     return value.equals(other.value);
   }  

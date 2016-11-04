@@ -172,6 +172,19 @@ public class JsonPrimitiveTest extends TestCase {
     assertEquals(p1.hashCode(), p2.hashCode());
   }
   
+  public void testUnequalDecimals() {
+    JsonPrimitive small = new JsonPrimitive(1.0);
+    JsonPrimitive large = new JsonPrimitive(2.0);
+    assertFalse("small = large", small.equals(large));
+
+    BigDecimal dmax = BigDecimal.valueOf(Double.MAX_VALUE);
+    JsonPrimitive smallBD =        // dmax + 100.0
+        new JsonPrimitive(dmax.add(new BigDecimal("100.0")));
+    JsonPrimitive largeBD =        // dmax + 200.0
+        new JsonPrimitive(dmax.add(new BigDecimal("200.0")));
+    assertFalse("small = large", smallBD.equals(largeBD));
+  }
+  
   public void testValidJsonOnToString() throws Exception {
     JsonPrimitive json = new JsonPrimitive("Some\nEscaped\nValue");
     assertEquals("\"Some\\nEscaped\\nValue\"", json.toString());
