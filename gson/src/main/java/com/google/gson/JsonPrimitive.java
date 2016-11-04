@@ -372,10 +372,10 @@ public final class JsonPrimitive extends JsonElement {
       return other.value == null;
     }
     if (isIntegral(this) && isIntegral(other)) {
-      return getAsNumber().longValue() == other.getAsNumber().longValue();
+      return getAsBigInteger().equals(other.getAsBigInteger());
     }
     if (isFloatingPoint(this) && isFloatingPoint(other)) {
-      return getAsNumber().doubleValue() == other.getAsNumber().doubleValue();
+      return getAsBigDecimal().equals(other.getAsBigDecimal());
     }
     return value.equals(other.value);
   }  
