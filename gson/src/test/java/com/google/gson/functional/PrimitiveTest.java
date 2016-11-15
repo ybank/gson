@@ -156,6 +156,7 @@ public class PrimitiveTest extends TestCase {
     json = "1.0";
     actual = gson.fromJson(json, Number.class);
     assertEquals(1L, actual.longValue());
+	assertEquals(1, actual.intValue());
   }
 
   public void testPrimitiveDoubleAutoboxedSerialization() {
