@@ -22,11 +22,15 @@ public class LazilyParsedNumberTest extends TestCase {
     LazilyParsedNumber n1 = new LazilyParsedNumber("1");
     LazilyParsedNumber n1Another = new LazilyParsedNumber("1");
     assertEquals(n1.hashCode(), n1Another.hashCode());
+    LazilyParsedNumber n2 = new LazilyParsedNumber("2");
+    assertFalse(n1.hashCode() == n2.hashCode());
   }
 
   public void testEquals(){
     LazilyParsedNumber n1 = new LazilyParsedNumber("1");
     LazilyParsedNumber n1Another = new LazilyParsedNumber("1");
     assertTrue(n1.equals(n1Another));
+    LazilyParsedNumber n2 = new LazilyParsedNumber("2");
+    assertFalse(n1.equals(n2));
   }
 }
