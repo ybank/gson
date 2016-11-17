@@ -175,6 +175,18 @@ public class PrimitiveTest extends TestCase {
     Number actual = gson.fromJson(json, Number.class);
     assertEquals(2L, actual.longValue());
   }
+  
+  public void testNumberDeserializationIntOverflow() {
+    String json = "4294967299";  // 2^32 + 3
+    Number actual = gson.fromJson(json, Number.class);
+    assertEquals(3, actual.intValue());
+  }
+  
+  public void testNumberDeserializationLongOverflow() {
+    String json = "18446744073709551619";  // 2^64 + 3
+    Number actual = gson.fromJson(json, Number.class);
+    assertEquals(3L, actual.longValue());
+  }
 
   public void testPrimitiveDoubleAutoboxedSerialization() {
     assertEquals("-122.08234335", gson.toJson(-122.08234335));
